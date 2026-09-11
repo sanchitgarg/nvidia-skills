@@ -1,9 +1,10 @@
 # Locating and Fetching Upstream Skills
 
-The canonical NuRec router (named `nurec-index`) and four of its five
+The canonical NuRec router (named `nurec-index`) and three of its five
 sibling skills live in `https://github.com/NVIDIA/nurec-skills` under
-`skills/<name>/SKILL.md`. **`asset-harvester` is the exception** — it is
-maintained in its own product repo; see the next section.
+`skills/<name>/SKILL.md`. **`asset-harvester` and `harmonizer` are the
+exceptions** — both are maintained in their own product repos; see the next
+section.
 
 The `nurec-skills` repo also exposes `.agents/skills` as a
 symlink onto `skills/`, so both paths resolve to the same tree. Refer
@@ -12,15 +13,19 @@ across agent runtimes that implement the `agentskills.io` standard.
 The folder name always matches the skill `name:` (e.g. the `ncore`
 skill lives at `skills/ncore/`).
 
-## `asset-harvester` — fetched from its own repo
+## `asset-harvester` and `harmonizer` — fetched from their own repos
 
-That skill ships from
-[`NVIDIA/asset-harvester`](https://github.com/NVIDIA/asset-harvester) under
-`skills/asset-harvester/` and is maintained there.
+Those two skills ship from their product repos and are maintained there:
 
-**Do not read it from a `nurec-skills` checkout.** That copy still exists but
-is no longer updated, so reading it silently yields stale guidance instead of
-failing.
+| skill | repo | path |
+|---|---|---|
+| `asset-harvester` | [`NVIDIA/asset-harvester`](https://github.com/NVIDIA/asset-harvester) | `skills/asset-harvester/` |
+| `harmonizer` (was `nurec-fixer`) | [`NVIDIA/harmonizer`](https://github.com/NVIDIA/harmonizer) | `skills/harmonizer/` |
+
+**Do not read either from a `nurec-skills` checkout.** Those copies still
+exist but are no longer updated, so reading them silently yields stale
+guidance instead of failing — the `nurec-fixer` copy, for instance, still
+says `nvidia/Harmonizer` needs a Hugging Face token, which it does not.
 
 Fetch it as you would any other upstream. **[Ask before
 cloning](#ask-before-cloning)** applies here too — it is a network fetch plus
@@ -29,9 +34,13 @@ a local write. Companion files (`references/`, `scripts/`) sit beside its
 
 ## Where to look on the local disk (try in order)
 
-This applies to the four `nurec-skills`-hosted siblings only. It does **not**
-override the `asset-harvester` exception above — a local copy of that one may
-be the stale `nurec-skills` version, so do not read it from here.
+This covers the three `nurec-skills`-hosted siblings **and**
+`harmonizer`: because that skill was renamed, a local hit under the name
+`harmonizer` cannot be the stale copy, which is still called `nurec-fixer`.
+**Never fall back to `nurec-fixer`.**
+
+`asset-harvester` is excluded — its name did not change, so a local copy of
+it may well be the stale `nurec-skills` version.
 
 1. `.agents/skills/<name>/SKILL.md` (Cursor, Codex, NemoClaw)
 2. `.claude/skills/<name>/SKILL.md` (Claude Code)
@@ -55,7 +64,12 @@ be the stale `nurec-skills` version, so do not read it from here.
 > If the user declines, stop and report which sibling skill is
 > missing. Do not fall back to silent network access.
 
-## Clone or refresh the upstream
+## Clone or refresh the upstream (`nurec-skills` siblings only)
+
+This clones `nurec-skills` and therefore serves only the three siblings
+hosted there. `harmonizer` and `asset-harvester` come from their own
+product repos — see the section above — and must never be taken from a
+`nurec-skills` clone.
 
 Use the shared upstream root unless the user has set a NuRec-specific
 override:

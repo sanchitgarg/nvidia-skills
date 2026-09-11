@@ -44,8 +44,10 @@ metadata:
         skill_path: skills/asset-harvester/
         upstream: https://github.com/NVIDIA/asset-harvester
         hf_model: https://huggingface.co/nvidia/asset-harvester
-      - name: nurec-fixer
-        folder: nurec-fixer/
+      - name: harmonizer
+        former_name: nurec-fixer
+        skill_repo: https://github.com/NVIDIA/harmonizer
+        skill_path: skills/harmonizer/
         upstream: https://github.com/NVIDIA/harmonizer
         hf_model: https://huggingface.co/nvidia/Harmonizer
         container: nvcr.io/nvidia/pytorch:25.10-py3
@@ -61,7 +63,7 @@ This is a **thin router** for NVIDIA Neural Reconstruction (NuRec)
 requests. It points at the upstream `nurec-index` skill at
 `https://github.com/NVIDIA/nurec-skills` and its sibling skills
 (`physical-ai-datasets`, `ncore`, `nre`, `asset-harvester`,
-`nurec-fixer`). Use this skill to:
+`harmonizer`). Use this skill to:
 
 - Identify which upstream sibling skill answers a NuRec question.
 - Locate, clone, or refresh the canonical `nurec-skills` checkout.
@@ -112,7 +114,7 @@ fetching the upstream. Downstream sibling skills require:
   recommended. Blackwell (RTX Pro 6000D): R580+.
   `asset-harvester` needs driver >= 570 and ~16 GB VRAM.
 - **Docker >= 23.0.1 + NVIDIA Container Toolkit >= 1.13.5** — for the
-  `nre`, `nre-tools`, and `nurec-fixer` containers
+  `nre`, `nre-tools`, and `harmonizer` containers
   (`nvcr.io/nvidia/nre/nre-ga:latest`,
   `nvcr.io/nvidia/nre/nre-tools-ga:latest`, and the locally-built
   `harmonizer-cosmos-env` image layered on
@@ -123,8 +125,9 @@ fetching the upstream. Downstream sibling skills require:
   `references/ngc-and-registry.md`).
 - **Hugging Face token** (`HF_TOKEN`) with the gated licenses
   **accepted in advance** on Hugging Face: `nvidia/PhysicalAI-*`
-  datasets, `nvidia/Harmonizer`, and
-  `nvidia/Cosmos-Predict2-0.6B-Text2Image`. The
+  datasets, `nvidia/Cosmos-Predict2-0.6B-Text2Image` and
+  `nvidia/Harmonizer-Dataset`. The `nvidia/Harmonizer` checkpoints are
+  public and download anonymously. The
   `nvidia/asset-harvester` checkpoints themselves are public; its
   optional DINOv3, Llama Guard and SAM 3D Body models are gated.
 - **Python 3.10+** with `huggingface_hub` installed;
@@ -135,7 +138,7 @@ fetching the upstream. Downstream sibling skills require:
   integration over `serve-grpc`.
 
 Prefer each sibling's `scripts/validate_setup.py` (present in `nre`,
-`asset-harvester`, and `nurec-fixer`) over hand-written checks. For
+`asset-harvester`, and `harmonizer`) over hand-written checks. For
 skills without one (`ncore`, `physical-ai-datasets`, this router),
 verify secrets without echoing values:
 
@@ -195,7 +198,7 @@ skill on the right. Arrows mean "do these in order".
 | Render a USDZ along the original camera positions | `nre` |
 | Render at full resolution / highest quality | `nre` (see "Quality presets") |
 | Render along a shifted trajectory (e.g. car moved 3 m left) | `nre` |
-| Adapt an existing USDZ to an augmented target-vehicle rig (carline adaptation) | `nre` (`export-custom-rig-trajectory` → `render`) → `nurec-fixer` |
+| Adapt an existing USDZ to an augmented target-vehicle rig (carline adaptation) | `nre` (`export-custom-rig-trajectory` → `render`) → `harmonizer` |
 | Render through a server so CARLA / Isaac Sim / AlpaSim / a custom simulator can ask for frames | `nre` (`serve-grpc`) |
 | Render the same USDZ many times back-to-back from Python with minimal per-call latency | `nre` (warm `serve-grpc` + thin Python client / `batch_render_rgb`) |
 | Render LiDAR sweeps (point clouds) from a USDZ | `nre` (`render-grpc --lidar`) |
@@ -203,7 +206,7 @@ skill on the right. Arrows mean "do these in order".
 | Skip training and use a pre-built indoor robotics scene | `physical-ai-datasets` → `nre` (then Isaac Sim 5.1) |
 | Extract individual 3D objects (cars, pedestrians) from a driving clip | `asset-harvester` |
 | Add, remove, or replace cars / pedestrians in a NuRec scene | `asset-harvester` → `nre` |
-| Clean up or harmonize rendered frames (ghosting, floaters, flicker, lighting/shadows) | `nurec-fixer`, **or** `--enable-difix` inside `nre` for inline rendering |
+| Clean up or harmonize rendered frames (ghosting, floaters, flicker, lighting/shadows) | `harmonizer`, **or** `--enable-difix` inside `nre` for inline rendering |
 | Export the scene as a PLY, mesh, depth maps, ego mask, etc. | `nre` |
 | Upgrade an old USDZ so newer NRE versions load it faster | `nre` (`upgrade-artifact`) |
 | Open a USDZ or PLY in a browser viewer | `nre` (`viewer` / `ply_viewer`) |
@@ -231,8 +234,8 @@ Open that file when the user's task spans more than one sibling skill.
 
 Refer to a sibling by its **name** — that is the portable identifier.
 The folder column is where it lives in a local `nurec-skills` checkout,
-except where a repo is named — `asset-harvester` ships from its own
-product repo.
+except where a repo is named — `asset-harvester` and `harmonizer` ship
+from their own product repos.
 
 | Name | Upstream folder | What it does |
 |------|-----------------|--------------|
@@ -240,7 +243,7 @@ product repo.
 | `ncore` | `skills/ncore/` | Converts any sensor recording to NCore V4 (the format NRE needs), upstream release `2026.04`. Also covers writing a new converter. |
 | `nre` | `skills/nre/` | The Neural Reconstruction Engine itself (`nvcr.io/nvidia/nre/nre-ga`, `nvcr.io/nvidia/nre/nre-tools-ga`, NRE `release_26.04`). Trains, performs carline adaptation, renders (locally, via warm `serve-grpc` + thin Python client / `batch_render_rgb`, or to an external simulator), exports meshes / point clouds / depth, edits actors, evaluates quality. |
 | `asset-harvester` | [`NVIDIA/asset-harvester`](https://github.com/NVIDIA/asset-harvester) → `skills/asset-harvester/` | Open-source Apache-2.0 pipeline (SparseViewDiT + TokenGS) that extracts individual 3D objects from sparse views in a driving clip and saves them as `.ply` Gaussian splats, optionally emitting `metadata.yaml` for the NuRec handoff. |
-| `nurec-fixer` | `skills/nurec-fixer/` | Standalone NVIDIA **DiffusionHarmonizer** workflow — public successor to the older Fixer / Difix3D+ recipes — that cleans rendered frames, harmonizes inserted actors, evaluates PSNR/LPIPS, and optionally fine-tunes the model. |
+| `harmonizer` | [`NVIDIA/harmonizer`](https://github.com/NVIDIA/harmonizer) → `skills/harmonizer/` | Standalone NVIDIA **DiffusionHarmonizer** workflow — public successor to the older Fixer / Difix3D+ recipes — that cleans rendered frames, harmonizes inserted actors, evaluates PSNR/LPIPS, and optionally fine-tunes the model. |
 
 For naming overlaps (NRE vs Fixer, ncore vs nre, AV-NuRec vs
 Cosmos-Drive-Dreams, NuRec vs SimReady) see
@@ -249,9 +252,11 @@ Cosmos-Drive-Dreams, NuRec vs SimReady) see
 ## Locate and fetch the upstream skills
 
 Try the local disk first, in this order — a sibling skill already
-installed in the runtime is preferable to a network fetch. This applies
-to the `nurec-skills`-hosted siblings; `asset-harvester` is fetched from
-its own repo (see `references/upstream-fetch.md`):
+installed in the runtime is preferable to a network fetch. `harmonizer`
+participates too: it was renamed, so a hit under that name cannot be the
+stale copy, which is still called `nurec-fixer`. `asset-harvester` does
+not, because its name did not change (see
+`references/upstream-fetch.md`):
 
 1. `.agents/skills/<name>/SKILL.md` (Cursor, Codex, NemoClaw)
 2. `.claude/skills/<name>/SKILL.md` (Claude Code)
@@ -259,8 +264,8 @@ its own repo (see `references/upstream-fetch.md`):
 4. `~/.cursor/skills/<name>/SKILL.md` (personal skills)
 5. An existing `nurec-skills` clone under the shared upstream root.
 
-**This order covers the `nurec-skills`-hosted siblings only.**
-`asset-harvester` is not among them — see
+**Never fall back to `nurec-fixer`** — that is the stale pre-rename copy.
+`asset-harvester` is excluded from this order entirely; see
 [`references/upstream-fetch.md`](references/upstream-fetch.md).
 
 **Only if none of those exist**, ask the user for explicit consent
@@ -268,6 +273,13 @@ before cloning. A `git clone` is a network fetch of an external
 repository plus a write to the local filesystem; it can violate
 org network policy and carries supply-chain risk. Show the user
 what you intend to run and wait for a yes.
+
+The recipe below clones `nurec-skills`, so it serves **only the three
+siblings hosted there**. A missing `harmonizer` is fetched from
+`NVIDIA/harmonizer`, and a missing `asset-harvester` from
+`NVIDIA/asset-harvester` — never from `nurec-skills`, which holds only
+their stale pre-move copies. See
+[`references/upstream-fetch.md`](references/upstream-fetch.md).
 
 Quick recipe (full version, including the pinned-commit layout, in
 [`references/upstream-fetch.md`](references/upstream-fetch.md)):
@@ -328,7 +340,7 @@ Companion files (`references/`, `scripts/`, `assets/`) live next to
   `nre`'s `export-external-assets` on hand-rolled `.ply` files unless
   the user explicitly asks to skip Asset Harvester.
 - For artifact cleanup, prefer the built-in `--enable-difix` path in
-  `nre`. Route to the standalone `nurec-fixer` only when the user
+  `nre`. Route to the standalone `harmonizer` only when the user
   needs the public code/model card, paired evaluation, fine-tuning,
   or fixes on previously rendered frames.
 - Do not invent NRE / NCore / DiffusionHarmonizer commands from
@@ -344,16 +356,17 @@ Companion files (`references/`, `scripts/`, `assets/`) live next to
   All training, rendering, conversion, and harmonization happens in
   upstream sibling skills.
 - **Upstream-pinned.** Most recipes live in
-  `https://github.com/NVIDIA/nurec-skills`; `asset-harvester` lives in
-  `https://github.com/NVIDIA/asset-harvester`, which evolves outside
+  `https://github.com/NVIDIA/nurec-skills`; `asset-harvester` and
+  `harmonizer` live in their own product repos, which evolve outside
   this repo. Stale clones can drift; always refresh the upstream
   before relying on a sibling skill.
 - **Hand-curated catalogue.** A newly-added upstream sibling is not
   discoverable here until someone edits the tables (see
   [`references/maintenance.md`](references/maintenance.md)).
-- **Gated content.** `nvidia/PhysicalAI-*`, `nvidia/Harmonizer`, and
-  `nvidia/Cosmos-Predict2-0.6B-Text2Image` require the user to accept
-  license terms on Hugging Face first. For `asset-harvester` only its
+- **Gated content.** `nvidia/PhysicalAI-*`,
+  `nvidia/Cosmos-Predict2-0.6B-Text2Image` and `nvidia/Harmonizer-Dataset`
+  require the user to accept license terms on Hugging Face first.
+  `nvidia/Harmonizer` itself is public. For `asset-harvester` only its
   optional DINOv3, Llama Guard and SAM 3D Body models are gated.
   The router cannot bypass this.
 - **Heavy footprint.** A complete NuRec workflow can leave 150 GB+
@@ -381,8 +394,8 @@ Companion files (`references/`, `scripts/`, `assets/`) live next to
 | NRE refuses to load a clip ("not valid NCore V4") | Recording was not converted | Run the `ncore` skill before invoking `nre` |
 | `serve-grpc` cold-start latency dominates a Python loop | One-shot Docker invocation per render | Use the `nre` warm `serve-grpc` + thin Python client (`batch_render_rgb`) recipe; the warm fast path needs a `26.04+` image |
 | Output files are owned by `root` after a `docker run` | `-u $(id -u):$(id -g)` was missing | `sudo chown -R "$(id -u):$(id -g)" <output_dir>`; add the `-u` flag next time |
-| Frames have ghosting / floaters / flicker after rendering | Inline cleanup not enabled | Re-render with `nre --enable-difix`, or post-process with `nurec-fixer` (DiffusionHarmonizer) |
-| Stale names (`ncore-data-conversion`, `nvidia/Fixer`, `nvidia/DiffusionHarmonizer` weights) in agent output | Out-of-date cached skill | Update to `ncore` and `nurec-fixer`; the model now lives at `nvidia/Harmonizer` — see [`references/maintenance.md`](references/maintenance.md) |
+| Frames have ghosting / floaters / flicker after rendering | Inline cleanup not enabled | Re-render with `nre --enable-difix`, or post-process with `harmonizer` (DiffusionHarmonizer) |
+| Stale names (`nurec-fixer`, `nvidia/Fixer`, `nvidia/DiffusionHarmonizer` weights) in agent output | Out-of-date cached skill | The skill is now `harmonizer`; the model now lives at `nvidia/Harmonizer` — see [`references/maintenance.md`](references/maintenance.md) |
 | Bash anti-pattern `${HF_TOKEN:+yes}${HF_TOKEN:-no}` echoed token value | Misuse of bash parameter expansion | Rotate the token; use `hf auth whoami` or length-only checks (see [`references/secrets-handling.md`](references/secrets-handling.md)) |
 
 ## Cross-skill teardown
@@ -404,5 +417,5 @@ Treat the upstream `nurec-index` at
 as authoritative **for the routing taxonomy and workflow ordering**;
 this skill mirrors only the picker tables, the workflow ordering, and
 the upstream fetch recipe. It is not authoritative for
-`asset-harvester`, which is maintained in
-<https://github.com/NVIDIA/asset-harvester>.
+`asset-harvester` or `harmonizer`, which are maintained in their own
+product repos.

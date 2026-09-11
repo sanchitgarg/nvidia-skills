@@ -19,16 +19,20 @@ sibling skills:
    - `asset-harvester` — <https://github.com/NVIDIA/asset-harvester>,
      `nvidia/asset-harvester` on Hugging Face. The **skill itself** now
      ships from that repo too (`skills/asset-harvester/`).
-   - `nurec-fixer` — <https://github.com/NVIDIA/harmonizer>,
-     `nvidia/Harmonizer`, base image
-     `nvcr.io/nvidia/pytorch:25.10-py3`
+   - `harmonizer` — <https://github.com/NVIDIA/harmonizer>,
+     `nvidia/Harmonizer` (public), base image
+     `nvcr.io/nvidia/pytorch:25.10-py3`. The **skill itself** now ships
+     from that repo too (`skills/harmonizer/`).
    - `physical-ai-datasets` — `nvidia/PhysicalAI-*` on Hugging Face
-5. If the upstream renames a sibling skill (e.g.
-   `ncore-data-conversion` → `ncore`), a container channel (`nre` →
-   `nre-ga`), or a model repo (`nvidia/DiffusionHarmonizer` →
-   `nvidia/Harmonizer`), search this skill for the old name and
-   update every occurrence — the picker table, workflow steps,
-   sibling skills table, mix-ups, hard rules, and troubleshooting.
+5. If the upstream renames a sibling skill (e.g. `nurec-fixer` →
+   `harmonizer`), a container channel (`nre` → `nre-ga`), or a model
+   repo (`nvidia/DiffusionHarmonizer` → `nvidia/Harmonizer`), search
+   this skill for the old name and update every **active route or
+   path** — the picker table, workflow steps, sibling skills table,
+   mix-ups, hard rules, and troubleshooting. Deliberately keep the old
+   name where it is history rather than a route: `former_name`, the
+   discovery aliases, the stale-copy warning, and the stale-names
+   troubleshooting row.
 6. Check whether the upstream layout still roots skills at
    `skills/<name>/SKILL.md` (with `.agents/skills` as a symlink); if
    it moves, update `metadata.upstream` and
@@ -37,5 +41,5 @@ sibling skills:
 Treat the upstream `nurec-index` as authoritative **for the routing
 taxonomy and workflow ordering**; this skill mirrors only the picker
 tables, the workflow ordering, and the upstream fetch recipe. It is not
-authoritative for `asset-harvester`, which is maintained in
-<https://github.com/NVIDIA/asset-harvester>.
+authoritative for `asset-harvester` or `harmonizer`, which are
+maintained in their own product repos.

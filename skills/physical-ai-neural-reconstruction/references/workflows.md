@@ -72,7 +72,7 @@ shadows, color). Two ways to fix this — pick one:
   server in `nre`. NRE owns this inline rendering integration. Default
   for users who are already rendering through NRE.
 - **Standalone path** — render frames first with `nre`, then run
-  `nurec-fixer` (NVIDIA DiffusionHarmonizer) on the folder of frames.
+  `harmonizer` (NVIDIA DiffusionHarmonizer) on the folder of frames.
   Use this when you want the public DiffusionHarmonizer code / model
   card, paired evaluation, fine-tuning, or fixes for frames that were
   rendered earlier without re-running NRE.
@@ -116,6 +116,6 @@ is a composition of existing steps, not a separate runtime:
 1. `nre` — `export-custom-rig-trajectory --rig-json <augmented rig>`,
    then `render --custom-rig-trajectory ... --camera-id <ids>`.
    See that skill's `references/carline-adaptation.md`.
-2. `nurec-fixer` — run DiffusionHarmonizer over each rendered camera
+2. `harmonizer` — run DiffusionHarmonizer over each rendered camera
    directory, preserving the raw frames. Skip this step only when the
    user explicitly wants raw renders.

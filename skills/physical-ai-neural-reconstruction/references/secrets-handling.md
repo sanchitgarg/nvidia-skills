@@ -32,8 +32,9 @@ hf auth whoami
 
 ## NGC key resolution
 
-NRE and the fixer resolve the NGC key in this order — do not prompt
-the user until both are exhausted:
+`nre` resolves the NGC key in this order — do not prompt the user until
+both are exhausted. (`harmonizer` documents only `NGC_API_KEY`, for
+`docker login nvcr.io`; it does not read `NGC_CLI_API_KEY`.)
 
 1. `$NGC_CLI_API_KEY` (primary; many CI runners and cloud images
    export it automatically)
