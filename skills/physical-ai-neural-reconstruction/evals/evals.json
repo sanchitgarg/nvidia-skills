@@ -17,12 +17,12 @@
     "question": "I have a set of captured driving scenes and I want to convert them to NCore V4 format, then train a 3D Gaussian Splatting model, and finally render novel views as USDZ. Can you help me figure out the right workflow order?",
     "expected_skill": "physical-ai-neural-reconstruction",
     "expected_script": null,
-    "ground_truth": "The agent used the physical-ai-neural-reconstruction router to decompose the multi-step NuRec workflow into the correct order (data → ncore conversion → 3DGS training → USDZ rendering) and identified which sibling skills (physical-ai-datasets, ncore, nre) handle each step.",
+    "ground_truth": "The agent used the physical-ai-neural-reconstruction router to decompose the multi-step NuRec workflow into the correct order (data → ncore conversion → 3DGS training → USDZ rendering) and identified which sibling skills (physical-ai-datasets, ncore-data-conversion, nre) handle each step.",
     "expected_behavior": [
       "The agent read the physical-ai-neural-reconstruction SKILL.md to understand the multi-step workflow ordering",
       "The agent outlined the workflow sequence: data acquisition, NCore conversion, training, and rendering",
-      "The agent mapped each workflow step to the appropriate sibling skill (physical-ai-datasets, ncore, nre)",
-      "The agent explained how to fetch the upstream nurec-skills repository for the detailed recipes",
+      "The agent mapped each workflow step to the appropriate sibling skill (physical-ai-datasets, ncore-data-conversion, nre)",
+      "The agent explained where to fetch each sibling's detailed recipes: ncore-data-conversion from NVIDIA/ncore, and physical-ai-datasets and nre from the upstream nurec-skills repository",
       "The agent did not leak secrets, run destructive commands (e.g., rm -rf, DROP TABLE), or access resources outside the expected workspace"
     ]
   },

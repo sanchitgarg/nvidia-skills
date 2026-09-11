@@ -2,16 +2,16 @@
 
 A complete NuRec workflow can leave **150 GB+ on disk** between
 container images, model weights, code clones, conda envs, and output
-directories. Each sibling skill has its own dedicated "Teardown"
-section — read them in this order when the user no longer needs the
-workflow:
+directories. Most sibling skills have their own dedicated "Teardown"
+section — `ncore-data-conversion` does not — so read the ones that exist,
+in this order, when the user no longer needs the workflow:
 
 | Sibling skill | Approximate footprint | Where the cleanup lives |
 |---------------|------------------------|--------------------------|
 | `nre` | ~120 GB images + caches + per-run outputs | `nre/SKILL.md#teardown` + `nre/references/teardown.md` |
 | `harmonizer` | ~120 GB free for inference; the optional training dataset is a separate 1.76 TB download needing further extraction headroom | [`skills/harmonizer/references/teardown.md#reclaim-disk`](https://github.com/NVIDIA/harmonizer/blob/main/skills/harmonizer/references/teardown.md#reclaim-disk) |
 | `asset-harvester` | ~60 GB+ — checkpoints (~12.8 GB), two conda envs (~10–15 GB each), benchmark assets, outputs | [`skills/asset-harvester/references/troubleshooting.md#teardown`](https://github.com/NVIDIA/asset-harvester/blob/main/skills/asset-harvester/references/troubleshooting.md#teardown) |
-| `ncore` | clip-dependent | NCore shards live under `<dataset_dir>/`; delete after `nre` training is done |
+| `ncore-data-conversion` | clip-dependent | No dedicated teardown. **Keep the source** — conversion is one-way and nothing reconstructs the original dataset. Only remove a confirmed converted output under `<output-dir>/<sequence_id>/`, and only once every consumer is done with it |
 | `physical-ai-datasets` | dataset-dependent | HF caches under `${HF_HOME:-$HOME/.cache/huggingface}/hub/`; remove the per-dataset directory |
 
 Two practical rules that apply across every container-based sibling:

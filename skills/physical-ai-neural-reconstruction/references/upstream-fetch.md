@@ -1,43 +1,44 @@
 # Locating and Fetching Upstream Skills
 
-The canonical NuRec router (named `nurec-index`) and three of its five
+The canonical NuRec router (named `nurec-index`) and two of its five
 sibling skills live in `https://github.com/NVIDIA/nurec-skills` under
-`skills/<name>/SKILL.md`. **`asset-harvester` and `harmonizer` are the
-exceptions** — both are maintained in their own product repos; see the next
-section.
+`skills/<name>/SKILL.md`. **`asset-harvester`, `harmonizer` and
+`ncore-data-conversion` are the exceptions** — all three are maintained in
+their own product repos; see the next section.
 
 The `nurec-skills` repo also exposes `.agents/skills` as a
 symlink onto `skills/`, so both paths resolve to the same tree. Refer
 to a sibling skill by its `name:` (e.g. `nre`) — that name is portable
 across agent runtimes that implement the `agentskills.io` standard.
-The folder name always matches the skill `name:` (e.g. the `ncore`
-skill lives at `skills/ncore/`).
+The folder name always matches the skill `name:` (e.g. the `nre` skill
+lives at `skills/nre/`).
 
-## `asset-harvester` and `harmonizer` — fetched from their own repos
+## Siblings fetched from their own repos
 
-Those two skills ship from their product repos and are maintained there:
+These three ship from their product repos and are maintained there:
 
 | skill | repo | path |
 |---|---|---|
 | `asset-harvester` | [`NVIDIA/asset-harvester`](https://github.com/NVIDIA/asset-harvester) | `skills/asset-harvester/` |
 | `harmonizer` (was `nurec-fixer`) | [`NVIDIA/harmonizer`](https://github.com/NVIDIA/harmonizer) | `skills/harmonizer/` |
+| `ncore-data-conversion` (was `ncore`) | [`NVIDIA/ncore`](https://github.com/NVIDIA/ncore) | `skills/ncore-data-conversion/` |
 
-**Do not read either from a `nurec-skills` checkout.** Those copies still
+**Do not read any of these from a `nurec-skills` checkout.** Those copies still
 exist but are no longer updated, so reading them silently yields stale
 guidance instead of failing — the `nurec-fixer` copy, for instance, still
 says `nvidia/Harmonizer` needs a Hugging Face token, which it does not.
 
-Fetch it as you would any other upstream. **[Ask before
-cloning](#ask-before-cloning)** applies here too — it is a network fetch plus
-a local write. Companion files (`references/`, `scripts/`) sit beside its
-`SKILL.md`.
+Fetch these as you would any other upstream. **[Ask before
+cloning](#ask-before-cloning)** applies — each is a network fetch plus a
+local write. Companion files sit beside `SKILL.md` **where present**:
+`ncore-data-conversion` ships `references/` but no `scripts/`.
 
 ## Where to look on the local disk (try in order)
 
-This covers the three `nurec-skills`-hosted siblings **and**
-`harmonizer`: because that skill was renamed, a local hit under the name
-`harmonizer` cannot be the stale copy, which is still called `nurec-fixer`.
-**Never fall back to `nurec-fixer`.**
+This covers the two `nurec-skills`-hosted siblings **and** `harmonizer`
+and `ncore-data-conversion`: both were renamed, so a local hit under either
+new name cannot be a stale copy — those are still called `nurec-fixer` and
+`ncore`. **Never fall back to `nurec-fixer` or `ncore`.**
 
 `asset-harvester` is excluded — its name did not change, so a local copy of
 it may well be the stale `nurec-skills` version.
@@ -57,18 +58,20 @@ it may well be the stale `nurec-skills` version.
 > ever tampered with. Show the user the exact command and get explicit
 > consent (e.g. "OK to `git clone
 > https://github.com/NVIDIA/nurec-skills` into `<DIR>`?") **before**
-> running it. Prefer a pinned tag or SHA (`--branch <tag-or-sha>`)
-> over `HEAD`, prefer fetching only the needed `SKILL.md` when the
-> layout allows it, and never silently default to `/tmp`.
+> running it. Prefer a pinned tag or SHA over `HEAD`, prefer fetching only
+> the needed `SKILL.md` when the layout allows it, and never silently
+> default to `/tmp`. **Exception — `ncore-data-conversion`:** no current
+> NCore release tag contains that skill, so use `main` or a commit at or
+> after `b5d3b8a`; pinning the latest tag returns a 404 for its path.
 >
 > If the user declines, stop and report which sibling skill is
 > missing. Do not fall back to silent network access.
 
 ## Clone or refresh the upstream (`nurec-skills` siblings only)
 
-This clones `nurec-skills` and therefore serves only the three siblings
-hosted there. `harmonizer` and `asset-harvester` come from their own
-product repos — see the section above — and must never be taken from a
+This clones `nurec-skills` and therefore serves only the two siblings
+hosted there. `harmonizer`, `ncore-data-conversion` and `asset-harvester`
+come from their own product repos — see the section above — and must never be taken from a
 `nurec-skills` clone.
 
 Use the shared upstream root unless the user has set a NuRec-specific

@@ -10,10 +10,10 @@ match the workflow IDs in the upstream `nurec-index` skill.
 Use this when the user has a fresh sensor log and wants a renderable
 3D scene at the end.
 
-1. `ncore` — convert the recording to NCore V4. The skill ships
-   built-in converters for PAI, Waymo, NuScenes, PandaSet, COLMAP,
-   and ScanNet++; for anything else it walks you through writing a
-   new converter.
+1. `ncore-data-conversion` — convert the recording to NCore V4. The skill
+   ships built-in converters for PAI, Waymo, COLMAP/ScanNet++, KITTI,
+   nuScenes and Argoverse 2; for anything else it walks you through
+   adapting the nearest one.
 2. `nre` — generate the auxiliary inputs (depth, segmentation, ego
    mask), train, and validate. Output is a USDZ. Render it three ways:
    with the local `nre render` CLI; with a warm `serve-grpc` server
@@ -47,7 +47,7 @@ training anything.
 
 ## D. Add, remove, or replace 3D objects in a scene
 
-1. `ncore` — make sure the original NCore clip is still on disk;
+1. `ncore-data-conversion` — make sure the original NCore clip is still on disk;
    Asset Harvester needs it to crop the object views.
 2. `asset-harvester` — point it at the object IDs you care about.
    For each one it produces a `.ply` (3D Gaussian model). Harvesting
@@ -81,7 +81,7 @@ shadows, color). Two ways to fix this — pick one:
 
 1. `physical-ai-datasets` — download `PhysicalAI-NuRec-PPISP` (~15 GB,
    8 outdoor sequences with ±2 EV bracketing for fair comparisons).
-2. `ncore` — only needed when re-building the NCore shards. The
+2. `ncore-data-conversion` — only needed when re-building the NCore shards. The
    dataset ships with both COLMAP and NCore V4 versions, so usually
    skip this.
 3. `nre` — train, then run `eval-rendering-metrics` against the

@@ -22,10 +22,13 @@ come back to the router.
   evaluation, fine-tuning, or fixes on frames that were rendered
   earlier without re-running NRE. Do not assume the two paths share
   cache layout or weights unless the NRE tag's own docs say so.
-- **`ncore` vs `nre`.** They run **in order**, never as alternatives.
-  `ncore` produces the input format; `nre` reads it. (Older
-  snapshots called this skill `ncore-data-conversion`; update any
-  stale links to `ncore`.)
+- **`ncore-data-conversion` vs `nre`.** For a **raw recording** they run
+  **in order**, never as alternatives — but a clip that is already NCore
+  V4 needs no conversion, so it goes straight to `nre`. The conversion
+  skill explicitly does not train reconstructions.
+  `ncore-data-conversion` produces the input format; `nre` reads it. (Older
+  snapshots called this skill `ncore`; update any stale links to
+  `ncore-data-conversion`.)
 - **`asset-harvester` vs `nre`'s `export-external-assets`.** Asset
   Harvester **produces** the per-object `.ply` files; `nre`'s
   `export-external-assets` **packages** them into a USDZ. Always

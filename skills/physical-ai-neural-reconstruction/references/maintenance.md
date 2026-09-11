@@ -13,7 +13,10 @@ sibling skills:
    A–G) so cross-references stay usable.
 4. Re-verify the upstream URLs, container names, and release pins
    still match each sibling's frontmatter `metadata:` block:
-   - `ncore` — <https://github.com/NVIDIA/ncore>, release `2026.04`
+   - `ncore-data-conversion` — <https://github.com/NVIDIA/ncore>. The
+     **skill itself** now ships from that repo too
+     (`skills/ncore-data-conversion/`). NCore publishes semver tags, not
+     a `2026.04`-style release
    - `nre` — `nvcr.io/nvidia/nre/nre-ga` +
      `nvcr.io/nvidia/nre/nre-tools-ga`, NRE `release_26.04`
    - `asset-harvester` — <https://github.com/NVIDIA/asset-harvester>,
@@ -41,5 +44,5 @@ sibling skills:
 Treat the upstream `nurec-index` as authoritative **for the routing
 taxonomy and workflow ordering**; this skill mirrors only the picker
 tables, the workflow ordering, and the upstream fetch recipe. It is not
-authoritative for `asset-harvester` or `harmonizer`, which are
-maintained in their own product repos.
+authoritative for `asset-harvester`, `harmonizer` or
+`ncore-data-conversion`, which are maintained in their own product repos.

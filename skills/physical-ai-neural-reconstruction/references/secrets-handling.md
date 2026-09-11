@@ -1,11 +1,16 @@
 # Secrets Handling Across Sibling Skills
 
-Every sibling skill ships a `Verifying secrets safely` block in its
+Most sibling skills ship a `Verifying secrets safely` block in their
 Prerequisites section. Always verify prerequisites by running
 `scripts/validate_setup.py` (where it exists) or, for skills without
-one (`ncore`, `physical-ai-datasets`, the router), use
-`hf auth whoami` or a length-only shell check. Never write ad-hoc
-bash that interpolates secret values.
+one (`physical-ai-datasets`, the router), use `hf auth whoami` or a
+length-only shell check. **`ncore-data-conversion` is different** — it
+has neither, and its credentials are not the usual ones: follow its own
+Prerequisites and `CONTRIBUTING.md`, where a GitHub PAT with
+`read:packages` in `~/.netrc` is required for Bazel, and `HF_TOKEN`
+matters only for the gated PAI converter. The generic HF/NGC checks
+below do not establish NCore readiness. Never write ad-hoc bash that
+interpolates secret values.
 
 In particular, do not use the bash anti-pattern:
 

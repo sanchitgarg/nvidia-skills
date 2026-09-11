@@ -7,8 +7,10 @@ tools:
   - Read
   - Shell
 compatibility: >-
-  Router skill; downstream sibling skills require Linux x86_64, an
-  NVIDIA GPU (Ampere+, CUDA 12.8, >= 24 GB VRAM), Docker >= 23.0.1,
+  Router skill; requirements vary by sibling. Collectively they may need
+  Linux x86_64, an NVIDIA GPU (Ampere+, CUDA 12.8, >= 24 GB VRAM) — not
+  needed by five of the six `ncore-data-conversion` converters — Docker
+  >= 23.0.1,
   NVIDIA Container Toolkit >= 1.13.5, an NGC API key, a Hugging Face
   token with the relevant gated licenses accepted, Python 3.10+, and
   `huggingface_hub`. Optional: CARLA / Isaac Sim 5.1 / AlpaSim for
@@ -30,10 +32,11 @@ metadata:
       - name: physical-ai-datasets
         folder: physical-ai-datasets/
         upstream: https://huggingface.co/nvidia
-      - name: ncore
-        folder: ncore/
+      - name: ncore-data-conversion
+        former_name: ncore
+        skill_repo: https://github.com/NVIDIA/ncore
+        skill_path: skills/ncore-data-conversion/
         upstream: https://github.com/NVIDIA/ncore
-        release_tag: "2026.04"
       - name: nre
         folder: nre/
         upstream: nvcr.io/nvidia/nre/nre-ga
@@ -62,7 +65,7 @@ metadata:
 This is a **thin router** for NVIDIA Neural Reconstruction (NuRec)
 requests. It points at the upstream `nurec-index` skill at
 `https://github.com/NVIDIA/nurec-skills` and its sibling skills
-(`physical-ai-datasets`, `ncore`, `nre`, `asset-harvester`,
+(`physical-ai-datasets`, `ncore-data-conversion`, `nre`, `asset-harvester`,
 `harmonizer`). Use this skill to:
 
 - Identify which upstream sibling skill answers a NuRec question.
@@ -112,7 +115,11 @@ fetching the upstream. Downstream sibling skills require:
   (48 GB+ recommended). Ampere (A100/A10/A40/RTX A6000), Ada
   (L20/L40/L40S), Hopper (H100/H20): R550+ required, R570+
   recommended. Blackwell (RTX Pro 6000D): R580+.
-  `asset-harvester` needs driver >= 570 and ~16 GB VRAM.
+  `asset-harvester` needs driver >= 570 and ~16 GB VRAM. This applies to
+  `nre`, `harmonizer`, `asset-harvester` and `ncore-data-conversion`'s
+  **PAI** converter only — PAI decodes H.264 on the GPU, so its binary
+  needs the stack even to start. The other five NCore converters need no
+  GPU.
 - **Docker >= 23.0.1 + NVIDIA Container Toolkit >= 1.13.5** — for the
   `nre`, `nre-tools`, and `harmonizer` containers
   (`nvcr.io/nvidia/nre/nre-ga:latest`,
@@ -130,17 +137,23 @@ fetching the upstream. Downstream sibling skills require:
   public and download anonymously. The
   `nvidia/asset-harvester` checkpoints themselves are public; its
   optional DINOv3, Llama Guard and SAM 3D Body models are gated.
-- **Python 3.10+** with `huggingface_hub` installed;
-  `pip install nvidia-ncore` for `ncore`; conda (Miniconda /
+- **Python 3.10+** with `huggingface_hub` installed. For
+  `ncore-data-conversion`, a checkout plus **Bazel via `bazelisk`** and a
+  GitHub PAT with `read:packages` in `~/.netrc` — the `nvidia-ncore` wheel
+  packages the library only and declares no console entry points, so it
+  does not give you the converters. conda (Miniconda /
   Miniforge) for `asset-harvester`; it needs a GCC that `nvcc` accepts
   (10–13 is the tested range, but `setup.sh` selects its own compiler).
 - **(Optional)** CARLA, Isaac Sim 5.1, or AlpaSim for simulator
   integration over `serve-grpc`.
 
 Prefer each sibling's `scripts/validate_setup.py` (present in `nre`,
-`asset-harvester`, and `harmonizer`) over hand-written checks. For
-skills without one (`ncore`, `physical-ai-datasets`, this router),
-verify secrets without echoing values:
+`asset-harvester`, and `harmonizer`) over hand-written checks.
+`ncore-data-conversion` has none, and the checks below do not establish
+its readiness — it needs a GitHub PAT with `read:packages` in
+`~/.netrc` for Bazel, and `HF_TOKEN` only for the gated PAI converter;
+follow its own Prerequisites. For `physical-ai-datasets` and this
+router, verify secrets without echoing values:
 
 ```bash
 hf auth whoami
@@ -173,7 +186,7 @@ viewpoint. Names that come up a lot:
 A typical NuRec project has three stages:
 
 1. **Get the input** — convert your own recording to NCore V4
-   (`ncore`), or download a pre-converted dataset
+   (`ncore-data-conversion`), or download a pre-converted dataset
    (`physical-ai-datasets`).
 2. **Train the reconstruction** — feed NCore V4 to NRE; out comes a
    USDZ (`nre`).
@@ -191,9 +204,9 @@ skill on the right. Arrows mean "do these in order".
 | I want to… | Upstream skill |
 |------------|----------------|
 | Find or download a NuRec dataset NVIDIA has published | `physical-ai-datasets` |
-| Convert my own camera / LiDAR / radar / depth / stereo recording into NCore V4 | `ncore` |
-| Write a new converter for an unsupported sensor setup (drone, RGB-D, ROS 2 bag, COLMAP, ScanNet++) | `ncore` |
-| Train a 3D reconstruction from an NCore clip | `ncore` → `nre` |
+| Convert my own camera / LiDAR / radar / depth / stereo recording into NCore V4 | `ncore-data-conversion` |
+| Adapt the nearest converter for an unsupported sensor setup (drone, RGB-D, ROS 2 bag) | `ncore-data-conversion` |
+| Train a 3D reconstruction from an NCore clip | `nre` (the clip is already V4 — no conversion needed; add `ncore-data-conversion` only to inspect or diagnose it) |
 | Generate the extra inputs NRE needs (segmentation masks, depth, ego mask, DINOv2, LiDAR-seg visibility) | `nre` (uses the `nre-tools-ga` container) |
 | Render a USDZ along the original camera positions | `nre` |
 | Render at full resolution / highest quality | `nre` (see "Quality presets") |
@@ -234,29 +247,29 @@ Open that file when the user's task spans more than one sibling skill.
 
 Refer to a sibling by its **name** — that is the portable identifier.
 The folder column is where it lives in a local `nurec-skills` checkout,
-except where a repo is named — `asset-harvester` and `harmonizer` ship
-from their own product repos.
+except where a repo is named — `asset-harvester`, `harmonizer` and
+`ncore-data-conversion` ship from their own product repos.
 
 | Name | Upstream folder | What it does |
 |------|-----------------|--------------|
 | `physical-ai-datasets` | `skills/physical-ai-datasets/` | Catalog and download recipes for every NVIDIA Physical AI dataset on Hugging Face (driving, robotics, manipulation, NuRec scenes, benchmarks). |
-| `ncore` | `skills/ncore/` | Converts any sensor recording to NCore V4 (the format NRE needs), upstream release `2026.04`. Also covers writing a new converter. |
+| `ncore-data-conversion` | [`NVIDIA/ncore`](https://github.com/NVIDIA/ncore) → `skills/ncore-data-conversion/` | Converts any sensor recording to NCore V4 (the format NRE needs). Also covers adapting the nearest built-in converter. |
 | `nre` | `skills/nre/` | The Neural Reconstruction Engine itself (`nvcr.io/nvidia/nre/nre-ga`, `nvcr.io/nvidia/nre/nre-tools-ga`, NRE `release_26.04`). Trains, performs carline adaptation, renders (locally, via warm `serve-grpc` + thin Python client / `batch_render_rgb`, or to an external simulator), exports meshes / point clouds / depth, edits actors, evaluates quality. |
 | `asset-harvester` | [`NVIDIA/asset-harvester`](https://github.com/NVIDIA/asset-harvester) → `skills/asset-harvester/` | Open-source Apache-2.0 pipeline (SparseViewDiT + TokenGS) that extracts individual 3D objects from sparse views in a driving clip and saves them as `.ply` Gaussian splats, optionally emitting `metadata.yaml` for the NuRec handoff. |
 | `harmonizer` | [`NVIDIA/harmonizer`](https://github.com/NVIDIA/harmonizer) → `skills/harmonizer/` | Standalone NVIDIA **DiffusionHarmonizer** workflow — public successor to the older Fixer / Difix3D+ recipes — that cleans rendered frames, harmonizes inserted actors, evaluates PSNR/LPIPS, and optionally fine-tunes the model. |
 
-For naming overlaps (NRE vs Fixer, ncore vs nre, AV-NuRec vs
+For naming overlaps (NRE vs Fixer, ncore-data-conversion vs nre, AV-NuRec vs
 Cosmos-Drive-Dreams, NuRec vs SimReady) see
 [`references/mix-ups.md`](references/mix-ups.md).
 
 ## Locate and fetch the upstream skills
 
 Try the local disk first, in this order — a sibling skill already
-installed in the runtime is preferable to a network fetch. `harmonizer`
-participates too: it was renamed, so a hit under that name cannot be the
-stale copy, which is still called `nurec-fixer`. `asset-harvester` does
-not, because its name did not change (see
-`references/upstream-fetch.md`):
+installed in the runtime is preferable to a network fetch. `harmonizer` and
+`ncore-data-conversion` participate too: both were renamed, so a hit under
+either new name cannot be a stale copy — those are still called
+`nurec-fixer` and `ncore`. `asset-harvester` does not, because its name
+did not change (see `references/upstream-fetch.md`):
 
 1. `.agents/skills/<name>/SKILL.md` (Cursor, Codex, NemoClaw)
 2. `.claude/skills/<name>/SKILL.md` (Claude Code)
@@ -264,7 +277,8 @@ not, because its name did not change (see
 4. `~/.cursor/skills/<name>/SKILL.md` (personal skills)
 5. An existing `nurec-skills` clone under the shared upstream root.
 
-**Never fall back to `nurec-fixer`** — that is the stale pre-rename copy.
+**Never fall back to `nurec-fixer` or `ncore`** — those are the stale
+pre-rename copies.
 `asset-harvester` is excluded from this order entirely; see
 [`references/upstream-fetch.md`](references/upstream-fetch.md).
 
@@ -274,11 +288,11 @@ repository plus a write to the local filesystem; it can violate
 org network policy and carries supply-chain risk. Show the user
 what you intend to run and wait for a yes.
 
-The recipe below clones `nurec-skills`, so it serves **only the three
-siblings hosted there**. A missing `harmonizer` is fetched from
-`NVIDIA/harmonizer`, and a missing `asset-harvester` from
-`NVIDIA/asset-harvester` — never from `nurec-skills`, which holds only
-their stale pre-move copies. See
+The recipe below clones `nurec-skills`, so it serves **only the two
+siblings hosted there**. A missing `harmonizer` comes from
+`NVIDIA/harmonizer`, `ncore-data-conversion` from `NVIDIA/ncore`, and
+`asset-harvester` from `NVIDIA/asset-harvester` — never from
+`nurec-skills`, which holds only their stale pre-move copies. See
 [`references/upstream-fetch.md`](references/upstream-fetch.md).
 
 Quick recipe (full version, including the pinned-commit layout, in
@@ -345,7 +359,9 @@ Companion files (`references/`, `scripts/`, `assets/`) live next to
   or fixes on previously rendered frames.
 - Do not invent NRE / NCore / DiffusionHarmonizer commands from
   memory. Re-read the upstream sibling skill — versions move fast
-  (NRE `release_26.04` and NCore `2026.04` are the current pins).
+  (NRE `release_26.04` is the current pin. NCore ships semver tags, but the
+  `ncore-data-conversion` skill is newer than the latest of them — take it
+  from `main`, not from a release tag.)
 - This router does not deploy infrastructure. Route AKS / OSMO /
   NIM Operator setup to
   `physical-ai-infrastructure-setup-and-resilient-scaling`.
@@ -355,9 +371,10 @@ Companion files (`references/`, `scripts/`, `assets/`) live next to
 - **Router only.** This skill never executes mutating NuRec commands.
   All training, rendering, conversion, and harmonization happens in
   upstream sibling skills.
-- **Upstream-pinned.** Most recipes live in
-  `https://github.com/NVIDIA/nurec-skills`; `asset-harvester` and
-  `harmonizer` live in their own product repos, which evolve outside
+- **Upstream version drift.** Most recipes live in
+  `https://github.com/NVIDIA/nurec-skills`; `asset-harvester`,
+  `harmonizer` and `ncore-data-conversion` live in their own product
+  repos, which evolve outside
   this repo. Stale clones can drift; always refresh the upstream
   before relying on a sibling skill.
 - **Hand-curated catalogue.** A newly-added upstream sibling is not
@@ -371,9 +388,11 @@ Companion files (`references/`, `scripts/`, `assets/`) live next to
   The router cannot bypass this.
 - **Heavy footprint.** A complete NuRec workflow can leave 150 GB+
   on disk. See [`references/teardown.md`](references/teardown.md).
-- **NVIDIA-only stack.** Requires Linux x86_64 plus an NVIDIA GPU and
-  the NVIDIA Container Toolkit. aarch64 / AMD / Intel / Apple Silicon
-  are not supported.
+- **NVIDIA-only stack.** Requires Linux x86_64. Most of the workflow
+  also needs an NVIDIA GPU and the NVIDIA Container Toolkit — the
+  exception is `ncore-data-conversion`, where only the PAI converter
+  needs the GPU stack. aarch64 / AMD / Intel / Apple Silicon are not
+  supported.
 - **No Omniverse / Isaac Sim integration steps.** Handing a USDZ to
   Isaac Sim 5.1 (workflow C) is documented in the Isaac Sim docs, not
   in the NuRec skill family.
@@ -391,18 +410,18 @@ Companion files (`references/`, `scripts/`, `assets/`) live next to
 | `denied: requested access to the resource is denied` from `nvcr.io/nvidia/nre/*` | Missing or expired NGC key | `docker login nvcr.io` with `$oauthtoken` / `${NGC_CLI_API_KEY:-$NGC_API_KEY}`; rotate at `org.ngc.nvidia.com/setup/api-key` if needed |
 | `manifest unknown` / `not found` pulling an NRE image | Pulling the legacy un-suffixed name or a tag that channel never published | Pull the GA names `nvcr.io/nvidia/nre/nre-ga:latest` and `nvcr.io/nvidia/nre/nre-tools-ga:latest` |
 | `--renderer` or `export-custom-rig-trajectory` rejected as unknown | Cached image is older than `26.04` / `26.03` | Pull a `26.04+` GA image; `--image-format jpeg` works on every family, so don't fall back to PNG |
-| NRE refuses to load a clip ("not valid NCore V4") | Recording was not converted | Run the `ncore` skill before invoking `nre` |
+| NRE refuses to load a clip ("not valid NCore V4") | Recording was not converted | Run the `ncore-data-conversion` skill before invoking `nre` |
 | `serve-grpc` cold-start latency dominates a Python loop | One-shot Docker invocation per render | Use the `nre` warm `serve-grpc` + thin Python client (`batch_render_rgb`) recipe; the warm fast path needs a `26.04+` image |
 | Output files are owned by `root` after a `docker run` | `-u $(id -u):$(id -g)` was missing | `sudo chown -R "$(id -u):$(id -g)" <output_dir>`; add the `-u` flag next time |
 | Frames have ghosting / floaters / flicker after rendering | Inline cleanup not enabled | Re-render with `nre --enable-difix`, or post-process with `harmonizer` (DiffusionHarmonizer) |
-| Stale names (`nurec-fixer`, `nvidia/Fixer`, `nvidia/DiffusionHarmonizer` weights) in agent output | Out-of-date cached skill | The skill is now `harmonizer`; the model now lives at `nvidia/Harmonizer` — see [`references/maintenance.md`](references/maintenance.md) |
+| Stale **skill** names (`nurec-fixer`, `ncore` as a sibling identifier or `skills/ncore/` route), `nvidia/Fixer`, `nvidia/DiffusionHarmonizer` weights in agent output | Out-of-date cached skill | The skills are now `harmonizer` and `ncore-data-conversion`. Bare **NCore** remains correct for the product, repo, `nvidia-ncore` library and `ncore_vis` tool; the model now lives at `nvidia/Harmonizer` — see [`references/maintenance.md`](references/maintenance.md) |
 | Bash anti-pattern `${HF_TOKEN:+yes}${HF_TOKEN:-no}` echoed token value | Misuse of bash parameter expansion | Rotate the token; use `hf auth whoami` or length-only checks (see [`references/secrets-handling.md`](references/secrets-handling.md)) |
 
 ## Cross-skill teardown
 
 A complete NuRec workflow can leave **150 GB+** on disk between
 container images, model weights, code clones, conda envs, and output
-directories. Each sibling skill has its own dedicated `Teardown`
+directories. Most sibling skills have their own dedicated `Teardown`
 section — read them in the order documented in
 [`references/teardown.md`](references/teardown.md) when the user no
 longer needs the workflow. Do **not** revoke `NGC_API_KEY` /
@@ -417,5 +436,5 @@ Treat the upstream `nurec-index` at
 as authoritative **for the routing taxonomy and workflow ordering**;
 this skill mirrors only the picker tables, the workflow ordering, and
 the upstream fetch recipe. It is not authoritative for
-`asset-harvester` or `harmonizer`, which are maintained in their own
-product repos.
+`asset-harvester`, `harmonizer` or `ncore-data-conversion`, which are
+maintained in their own product repos.
