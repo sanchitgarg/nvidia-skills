@@ -39,7 +39,7 @@ workspaces.
 This local eligibility does **not** apply to `physical-ai-datasets`
 or `asset-harvester` — see the previous section.
 
-Do not read sibling skills from a `nurec-skills` checkout: those
+Do not read sibling skills from a retired bundled checkout: those
 copies are retired and may still exist. Use each skill's product-repo
 home. In particular, `physical-ai-datasets` and `asset-harvester`
 kept their names, so a generic same-name local hit may be the old

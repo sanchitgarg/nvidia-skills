@@ -212,7 +212,7 @@ discovery cannot distinguish the old bundled copy. Use their
 canonical product-repo source instead. A canonical definition
 already acquired for this task can be reused.
 
-Do not read sibling skills from a `nurec-skills` checkout: those
+Do not read sibling skills from a retired bundled checkout: those
 copies are retired and may still exist. Use each skill's product-repo
 home. In particular, `physical-ai-datasets` and `asset-harvester`
 kept their names, so a generic same-name local hit may be the old
@@ -244,7 +244,7 @@ upstream index to fetch.
   command, and clone only into a path the user agreed to — never
   silently into `/tmp`. Do not scan broad developer workspaces such
   as `~/Codes` or reuse unrelated old clones. Never fall back to a
-  `nurec-skills` checkout.
+  retired bundled checkout.
 - Use the GA container channel: `nvcr.io/nvidia/nre/nre-ga` and
   `nvcr.io/nvidia/nre/nre-tools-ga`. The un-suffixed
   `nvcr.io/nvidia/nre/nre` / `nre-tools` names are the legacy

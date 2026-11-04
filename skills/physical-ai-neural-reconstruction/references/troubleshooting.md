@@ -7,7 +7,7 @@ that skill, not here.
 | Error / symptom | Likely cause | Solution |
 |-----------------|--------------|----------|
 | Selected sibling skill missing locally | Product-repo skill not fetched yet | Walk the local lookup order in the router's "Locate and fetch the upstream skills" section, then ask consent before cloning the mapped product repo |
-| Same-name local hit for `physical-ai-datasets` or `asset-harvester` looks stale | Generic discovery cannot distinguish the retired bundled copy | Use the canonical product-repo source in the sibling table; do not read a `nurec-skills` checkout |
+| Same-name local hit for `physical-ai-datasets` or `asset-harvester` looks stale | Generic discovery cannot distinguish the retired bundled copy | Use the canonical product-repo source in the sibling table; do not read a retired bundled checkout |
 | `403`/`401` pulling `nvidia/PhysicalAI-*` from HF | Gated license not accepted, or `HF_TOKEN` unset / wrong scope | Accept the gated license on Hugging Face, then `hf auth login` with a token that has `read` access |
 | `denied: requested access to the resource is denied` from `nvcr.io/nvidia/nre/*` | Missing or expired NGC key | `docker login nvcr.io` with `$oauthtoken` / `${NGC_CLI_API_KEY:-$NGC_API_KEY}`; rotate at `org.ngc.nvidia.com/setup/api-key` if needed |
 | `manifest unknown` / `not found` pulling an NRE image | Pulling the legacy un-suffixed name, or a release *name* used as a tag (e.g. `:release_26.04` — the GA channel publishes `26.04.01`, `26.04`, `26`, `latest`) | Pull the GA names with a published tag: `nvcr.io/nvidia/nre/nre-ga:26.04.01` (or `:latest`) and `nvcr.io/nvidia/nre/nre-tools-ga:latest`; list tags on the NGC catalog page for `nvidia/nre/nre-ga` |
